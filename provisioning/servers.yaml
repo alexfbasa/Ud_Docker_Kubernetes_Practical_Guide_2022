@@ -1,0 +1,12 @@
+master:
+  host: master-node
+  memory: 2046
+  cpu: 2
+
+workers:
+  - host: worker-node-1
+    memory: 2046
+    cpu: 2
+  - host: worker-node-2
+    memory: 2046
+    cpu: 2
