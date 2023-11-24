@@ -31,43 +31,69 @@ Nodes are the worker machines in a Kubernetes cluster, responsible for running c
 
 3. **Container Runtime:** Software responsible for running containers (e.g., Docker, containerd).
 
-## Minikube Setup
+## Setup
 
-This lab utilizes Minikube, a tool to run Kubernetes clusters locally. Follow the instructions
-in [`install_kubernetes.txt`](./install_kubernetes.txt) in the same directory to install Minikube before proceeding.
+This lab utilizes Vagrant to provision two nodes, a Master and Worker.
+Most of the needed tools will be installed in both hosts by running Vagrant.
+
+```commandline
+cd provisioning
+vagrant up
+```
+
+run the kubernetes initialization command on only on MASTER node:
+
+```commandline
+sudo kubeadm init --apiserver-advertise-address=100.0.0.1 --pod-network-cidr=10.244.0.0/16
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+```
+
+
+Note down kubeadm join command which we are going to use from worker node to join the master node using token. (Note : -
+Following command will be different for you, do not try copy the following command)
+
+*Do not execute the referred command in the worker node yet.*
+
+```commandline
+kubeadm join 100.0.0.1:6443 --token {{YOUR_TOKEN}} --discovery-token-ca-cert-hash sha256:{{YOUR_HASH}}
+```
+
+After the master of the cluster is ready to handle jobs and the services are running, for the purpose of making
+containers accessible to each other through networking, we need to set up the network for container communication.
+
+Copy from [`/provisioning/files/kube-flannel.yml`](./provisioning/files/kube-flannel.yml) into Master node and apply it.
+You can run it by vagrant scp using vagrant-scp plugin:
+
+```commandline
+vagrant plugin install vagrant-scp
+vagrant scp files/kube-flannel.yml master:/tmp
+vagrant ssh master
+cd /tmp
+kubectl apply -f kube-flannel.yml
+```
+
+Now you can execute the kubeadm join in the worker node:
+```commandline
+sudo kubeadm join 100.0.0.1:6443 --token {{YOUR_TOKEN}} --discovery-token-ca-cert-hash sha256:{{YOUR_HASH}}
+```
 
 ## Lab Instructions
 
 1. **Clone the Repository:**
+
 ```bash
 git clone <repository-url>
 cd <repository-directory>
 ```
 
-2. **Install Minikube:**
-Follow the instructions in `install_kubernetes.txt` to install Minikube on your machine.
-
-3. **Start Minikube Cluster:**
-```bash
-minikube start
-```
-
-4. **Explore Kubernetes:**
- - Deploy sample applications.
- - Inspect pods, services, and other resources.
- - Scale deployments and observe the behavior.
-
-5. **Clean Up:**
-```bash
-minikube stop
-```
-
 ## Additional Resources
 
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
-- [Minikube Documentation](https://minikube.sigs.k8s.io/docs/)
 
-Happy Kubernetes Learning!
 
 
 
